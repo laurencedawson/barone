@@ -45,15 +45,16 @@ public class EllipsizingTextView extends TextView {
   private float lineAdditionalVerticalPadding = 0.0f;
 
   public EllipsizingTextView(Context context) {
-    super(context);
+    this(context, null);
   }
 
   public EllipsizingTextView(Context context, AttributeSet attrs) {
-    super(context, attrs);
+    this(context, attrs, 0);
   }
 
   public EllipsizingTextView(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
+    super.setEllipsize(null);
   }
 
   public void addEllipsizeListener(EllipsizeListener listener) {
@@ -102,7 +103,6 @@ public class EllipsizingTextView extends TextView {
   @Override
   protected void onDraw(Canvas canvas) {
     if (isStale) {
-      super.setEllipsize(null);
       resetText();
     }
     super.onDraw(canvas);
