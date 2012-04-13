@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 Micah Hainline
+ * Copyright (C) 2012 Triposo
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +87,10 @@ public class EllipsizingTextView extends TextView {
     return maxLines;
   }
 
+  public boolean ellipsizingLastFullyVisibleLine() {
+    return maxLines == Integer.MAX_VALUE;
+  }
+
   @Override
   public void setLineSpacing(float add, float mult) {
     this.lineAdditionalVerticalPadding = add;
@@ -104,6 +109,21 @@ public class EllipsizingTextView extends TextView {
   }
 
   @Override
+  protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+    super.onSizeChanged(w, h, oldw, oldh);
+    if (ellipsizingLastFullyVisibleLine()) {
+      isStale = true;
+    }
+  }
+
+  public void setPadding(int left, int top, int right, int bottom) {
+    super.setPadding(left, top, right, bottom);
+    if (ellipsizingLastFullyVisibleLine()) {
+      isStale = true;
+    }
+  }
+
+  @Override
   protected void onDraw(Canvas canvas) {
     if (isStale) {
       resetText();
@@ -112,24 +132,22 @@ public class EllipsizingTextView extends TextView {
   }
 
   private void resetText() {
-    int maxLines = getMaxLines();
     String workingText = fullText;
     boolean ellipsized = false;
-    if (maxLines != -1) {
-      Layout layout = createWorkingLayout(workingText);
-      if (layout.getLineCount() > maxLines) {
-        workingText = fullText.substring(0, layout.getLineEnd(maxLines - 1))
-            .trim();
-        while (createWorkingLayout(workingText + ELLIPSIS).getLineCount() > maxLines) {
-          int lastSpace = workingText.lastIndexOf(' ');
-          if (lastSpace == -1) {
-            break;
-          }
-          workingText = workingText.substring(0, lastSpace);
+    Layout layout = createWorkingLayout(workingText);
+    int linesCount = getLinesCount();
+    if (layout.getLineCount() > linesCount) {
+      // We have more lines of text than we are allowed to display.
+      workingText = fullText.substring(0, layout.getLineEnd(linesCount - 1)).trim();
+      while (createWorkingLayout(workingText + ELLIPSIS).getLineCount() > linesCount) {
+        int lastSpace = workingText.lastIndexOf(' ');
+        if (lastSpace == -1) {
+          break;
         }
-        workingText = workingText + ELLIPSIS;
-        ellipsized = true;
+        workingText = workingText.substring(0, lastSpace);
       }
+      workingText = workingText + ELLIPSIS;
+      ellipsized = true;
     }
     if (!workingText.equals(getText())) {
       programmaticChange = true;
@@ -148,10 +166,37 @@ public class EllipsizingTextView extends TextView {
     }
   }
 
+  /**
+   * Get how many lines of text we are allowed to display.
+   */
+  private int getLinesCount() {
+    if (ellipsizingLastFullyVisibleLine()) {
+      int fullyVisibleLinesCount = getFullyVisibleLinesCount();
+      if (fullyVisibleLinesCount == -1) {
+        return 1;
+      } else {
+        return fullyVisibleLinesCount;
+      }
+    } else {
+      return maxLines;
+    }
+  }
+
+  /**
+   * Get how many lines of text we can display so their full height is visible.
+   */
+  private int getFullyVisibleLinesCount() {
+    Layout layout = createWorkingLayout("");
+    int height = getHeight() - getPaddingTop() - getPaddingBottom();
+    int lineHeight = layout.getLineBottom(0);
+    return height / lineHeight;
+  }
+
   private Layout createWorkingLayout(String workingText) {
-    return new StaticLayout(workingText, getPaint(), getWidth()
-        - getPaddingLeft() - getPaddingRight(), Alignment.ALIGN_NORMAL,
-        lineSpacingMultiplier, lineAdditionalVerticalPadding, false);
+    return new StaticLayout(workingText, getPaint(),
+        getWidth() - getPaddingLeft() - getPaddingRight(),
+        Alignment.ALIGN_NORMAL, lineSpacingMultiplier,
+        lineAdditionalVerticalPadding, false /* includepad */);
   }
 
   @Override
