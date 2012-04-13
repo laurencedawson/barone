@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.text.Layout;
 import android.text.Layout.Alignment;
@@ -40,7 +41,7 @@ public class EllipsizingTextView extends TextView {
   private boolean isStale;
   private boolean programmaticChange;
   private String fullText;
-  private int maxLines = -1;
+  private int maxLines;
   private float lineSpacingMultiplier = 1.0f;
   private float lineAdditionalVerticalPadding = 0.0f;
 
@@ -55,6 +56,8 @@ public class EllipsizingTextView extends TextView {
   public EllipsizingTextView(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
     super.setEllipsize(null);
+    TypedArray a = context.obtainStyledAttributes(attrs, new int[] { android.R.attr.maxLines });
+    setMaxLines(a.getInt(0, Integer.MAX_VALUE));
   }
 
   public void addEllipsizeListener(EllipsizeListener listener) {
