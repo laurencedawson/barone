@@ -29,7 +29,7 @@ import android.util.AttributeSet;
 import android.widget.TextView;
 
 public class EllipsizingTextView extends TextView {
-  private static final String ELLIPSIS = "...";
+  private static final String ELLIPSIS = "…";
 
   public interface EllipsizeListener {
     void ellipsizeStateChanged(boolean ellipsized);
